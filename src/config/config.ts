@@ -1,4 +1,4 @@
-const isProduction = import.meta.env.PROD;
+﻿const isProduction = import.meta.env.PROD;
 
 export const config = {
   homeAssistant: {
@@ -8,6 +8,7 @@ export const config = {
   entities: {
     spotify: "media_player.spotify_joel_burki",
     temperature: "sensor.thermostat_gamezimmer_temperature",
+    outdoorTemperature: "sensor.hue_outdoor_motion_sensor_1_temperature",
   },
 
   display: {

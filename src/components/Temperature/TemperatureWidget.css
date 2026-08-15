@@ -1,27 +1,58 @@
 ﻿.temperature-widget {
   height: 100%;
-  padding: 30px 34px;
+  padding: 26px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+}
+
+.temperature-widget__row {
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 22px;
+}
+
+.temperature-widget__row--secondary {
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.075);
 }
 
 .temperature-widget__icon {
-  width: 82px;
-  height: 82px;
+  width: 78px;
+  height: 78px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 25px;
+  border-radius: 24px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--accent);
 }
 
+.temperature-widget__icon--outdoor {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  color: #a7f3c4;
+  background: rgba(29, 185, 84, 0.12);
+}
+
+.temperature-widget__content {
+  min-width: 0;
+}
+
 .temperature-widget__value {
-  font-size: clamp(64px, 5.2vw, 104px);
+  font-size: clamp(56px, 4.8vw, 88px);
   font-weight: 900;
   letter-spacing: -0.07em;
   line-height: 0.92;
+  white-space: nowrap;
+}
+
+.temperature-widget__value--small {
+  font-size: clamp(34px, 3vw, 52px);
+  letter-spacing: -0.065em;
 }
 
 .temperature-widget__value span {
@@ -33,6 +64,46 @@
 
 .temperature-widget__label {
   margin-top: 10px;
-  font-size: 28px;
+  font-size: 27px;
   color: var(--muted);
+}
+
+.temperature-widget__label--small {
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+@media (max-width: 1350px) {
+  .temperature-widget {
+    padding: 22px 28px;
+    gap: 18px;
+  }
+
+  .temperature-widget__icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 22px;
+  }
+
+  .temperature-widget__icon--outdoor {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+  }
+
+  .temperature-widget__value {
+    font-size: 62px;
+  }
+
+  .temperature-widget__value--small {
+    font-size: 39px;
+  }
+
+  .temperature-widget__label {
+    font-size: 23px;
+  }
+
+  .temperature-widget__label--small {
+    font-size: 16px;
+  }
 }
