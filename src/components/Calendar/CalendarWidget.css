@@ -1,4 +1,4 @@
-.calendar-widget {
+﻿.calendar-widget {
   height: 100%;
   padding: 24px 30px;
   display: grid;
@@ -78,23 +78,4 @@
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: 22px;
-}
-
-@media (max-width: 1350px) {
-  .calendar-widget {
-    grid-template-columns: 280px minmax(0, 1fr);
-    padding: 22px 26px;
-  }
-
-  .calendar-widget header h2 {
-    font-size: 34px;
-  }
-
-  .calendar-widget__events {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .calendar-widget__event {
-    height: 118px;
-  }
 }

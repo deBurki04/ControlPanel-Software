@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+﻿import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(customParseFormat);
@@ -16,8 +16,13 @@ export function parseIcsEvents(raw: string): CalendarEvent[] {
   return chunks
     .map((chunk) => {
       const title = readIcsValue(chunk, "SUMMARY") ?? "Ohne Titel";
-      const dtStart = readIcsValue(chunk, "DTSTART") ?? readIcsValue(chunk, "DTSTART;VALUE=DATE");
-      const dtEnd = readIcsValue(chunk, "DTEND") ?? readIcsValue(chunk, "DTEND;VALUE=DATE");
+      const dtStart =
+        readIcsValue(chunk, "DTSTART") ??
+        readIcsValue(chunk, "DTSTART;VALUE=DATE");
+
+      const dtEnd =
+        readIcsValue(chunk, "DTEND") ??
+        readIcsValue(chunk, "DTEND;VALUE=DATE");
 
       if (!dtStart) return null;
 

@@ -1,0 +1,38 @@
+﻿.clock-widget {
+  height: 100%;
+  padding: 30px 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.clock-widget__time {
+  font-size: clamp(98px, 7.2vw, 156px);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  line-height: 0.92;
+}
+
+.clock-widget__date {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.clock-widget__date strong,
+.clock-widget__date span {
+  display: block;
+}
+
+.clock-widget__date strong {
+  color: var(--text);
+  font-size: 31px;
+  letter-spacing: -0.04em;
+}
+
+.clock-widget__date span {
+  margin-top: 4px;
+  font-size: 23px;
+}

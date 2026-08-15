@@ -1,4 +1,4 @@
-.spotify-widget {
+﻿.spotify-widget {
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -74,8 +74,6 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
-  word-break: normal;
-  overflow-wrap: normal;
 }
 
 .spotify-widget h2 {
@@ -132,58 +130,4 @@
   color: var(--muted);
   font-size: 19px;
   font-variant-numeric: tabular-nums;
-}
-
-@media (min-width: 1600px) {
-  .spotify-widget {
-    grid-template-columns: minmax(430px, 0.88fr) minmax(0, 1.12fr);
-    gap: 44px;
-    padding: 38px;
-  }
-
-  .spotify-widget h1 {
-    font-size: clamp(54px, 4.5vw, 92px);
-  }
-
-  .spotify-widget__progress {
-    margin-top: 56px;
-  }
-}
-
-@media (max-width: 1350px) {
-  .spotify-widget {
-    grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.05fr);
-    gap: 26px;
-    padding: 24px;
-  }
-
-  .spotify-widget__cover {
-    border-radius: 28px;
-  }
-
-  .spotify-widget__status {
-    font-size: 15px;
-    padding: 8px 12px;
-  }
-
-  .spotify-widget h1 {
-    margin-top: 24px;
-    font-size: clamp(34px, 3.8vw, 58px);
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-  }
-
-  .spotify-widget h2 {
-    margin-top: 14px;
-    font-size: clamp(24px, 2.1vw, 34px);
-  }
-
-  .spotify-widget__album {
-    margin-top: 12px;
-    font-size: 18px;
-  }
-
-  .spotify-widget__progress {
-    margin-top: 28px;
-  }
 }
