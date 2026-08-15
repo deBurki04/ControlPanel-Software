@@ -1,5 +1,5 @@
 import { config } from "../../config/config";
-import { localConfig } from "../../config/config.local";
+import { localConfig } from "../../config/config.local.ts";
 import type { HomeAssistantEntity, StateChangedEvent } from "../../types/homeassistant";
 import { useHomeAssistantStore } from "../../store/homeassistant";
 import type { HAMessage, PendingCommand } from "./Types";

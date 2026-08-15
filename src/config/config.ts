@@ -1,3 +1,5 @@
+﻿const isProduction = import.meta.env.PROD;
+
 export const config = {
   homeAssistant: {
     url: "http://192.168.1.23:8123",
@@ -9,23 +11,20 @@ export const config = {
   },
 
   display: {
-    /**
-     * false = Entwicklungsmodus:
-     * - normales Fenster
-     * - verschiebbar
-     * - Titelleiste sichtbar
-     *
-     * true = GC8/Kiosk-Modus:
-     * - Vollbild
-     * - optional immer im Vordergrund
-     * - optional ohne Fensterrahmen
-     */
-    kiosk: false,
+    kiosk: isProduction,
+
+    monitor: {
+      enabled: isProduction,
+      nameIncludes: ["GC8", "Poly"],
+      preferredResolution: {
+        width: 1280,
+        height: 800,
+      },
+      fallback: "secondary",
+    },
 
     alwaysOnTop: false,
-
     hideDecorationsInKiosk: true,
-
     enableHotkeys: true,
   },
 
