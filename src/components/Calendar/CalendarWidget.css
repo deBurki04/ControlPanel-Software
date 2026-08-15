@@ -1,10 +1,10 @@
 .calendar-widget {
   height: 100%;
-  padding: 26px 32px;
+  padding: 24px 30px;
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: 310px minmax(0, 1fr);
   align-items: center;
-  gap: 30px;
+  gap: 28px;
 }
 
 .calendar-widget header {
@@ -26,7 +26,7 @@
 .calendar-widget header h2 {
   margin: 0;
   color: var(--text);
-  font-size: 40px;
+  font-size: 38px;
   line-height: 1;
   letter-spacing: -0.052em;
 }
@@ -40,8 +40,8 @@
 
 .calendar-widget__event {
   min-width: 0;
-  height: 142px;
-  padding: 18px 18px;
+  height: 132px;
+  padding: 16px 18px;
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -78,4 +78,23 @@
   grid-column: 1 / -1;
   color: var(--muted);
   font-size: 22px;
+}
+
+@media (max-width: 1350px) {
+  .calendar-widget {
+    grid-template-columns: 280px minmax(0, 1fr);
+    padding: 22px 26px;
+  }
+
+  .calendar-widget header h2 {
+    font-size: 34px;
+  }
+
+  .calendar-widget__events {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .calendar-widget__event {
+    height: 118px;
+  }
 }

@@ -127,14 +127,26 @@ class HomeAssistantClient {
   private async bootstrap() {
     try {
       const states = await this.getStates();
+
+      console.log("HA states geladen:", states.length);
+      console.log(
+        "Spotify Entity:",
+        states.find((entity) => entity.entity_id === config.entities.spotify),
+      );
+      console.log(
+        "Temperature Entity:",
+        states.find((entity) => entity.entity_id === config.entities.temperature),
+      );
+
       useHomeAssistantStore.getState().setEntities(states);
 
       await this.sendCommand("subscribe_events", {
         event_type: "state_changed",
       });
-    } catch (error) {
-      useHomeAssistantStore.getState().setStatus("error", String(error));
-    }
+   } catch (error) {
+     console.error("HA bootstrap error:", error);
+     useHomeAssistantStore.getState().setStatus("error", String(error));
+   }
   }
 
   private handleEvent(event: StateChangedEvent) {

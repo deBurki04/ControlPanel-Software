@@ -24,7 +24,7 @@ export function useDisplayMode() {
           await appWindow.setAlwaysOnTop(false);
         }
       } catch (error) {
-        console.warn("Display-Modus konnte nicht vollständig angewendet werden:", error);
+        console.warn("Display-Modus konnte nicht angewendet werden:", error);
       }
     }
 
@@ -56,6 +56,7 @@ export function useDisplayMode() {
     }
 
     applyInitialMode();
+
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
