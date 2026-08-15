@@ -33,9 +33,21 @@ type LocalConfigWithDiscord = typeof localConfig & {
   };
 };
 
+interface DiscordBotSelf {
+  id: string;
+  username: string;
+  bot?: boolean;
+}
+
+interface DiscordGuildInfo {
+  id: string;
+  name: string;
+}
+
 export type DiscordConnectionStatus =
   | "disabled"
   | "missing-token"
+  | "checking"
   | "connecting"
   | "connected"
   | "ready"
@@ -47,6 +59,7 @@ export type DiscordConnectionStatus =
 export interface DiscordVoiceMember {
   userId: string;
   name: string;
+  avatarUrl: string | null;
   isSelf: boolean;
   muted: boolean;
   deafened: boolean;
@@ -100,18 +113,61 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
     let reconnectTimer: number | null = null;
     let sequence: number | null = null;
     let closedByEffect = false;
+    let reconnectAttempt = 0;
+
+    console.info("Discord Start:", {
+      guildId: config.discord.guildId,
+      userId: config.discord.userId,
+      tokenConfigured: botToken.length > 20,
+    });
+
+    async function validateAndConnect() {
+      try {
+        setStatus("checking");
+        setError(null);
+
+        const bot = await fetchDiscordBotSelf(botToken);
+        console.info("Discord REST Bot:", {
+          id: bot.id,
+          username: bot.username,
+          bot: bot.bot,
+        });
+
+        const guild = await fetchDiscordGuild(config.discord.guildId, botToken);
+        console.info("Discord REST Guild:", {
+          id: guild.id,
+          name: guild.name,
+        });
+
+        setGuildName(guild.name);
+
+        if (!closedByEffect) connect();
+      } catch (caughtError) {
+        const message = formatError(caughtError);
+        console.error("Discord REST Check fehlgeschlagen:", message);
+
+        setStatus("error");
+        setError(
+          `Discord REST Check fehlgeschlagen: ${message}. Token prüfen oder Bot in Server einladen.`,
+        );
+      }
+    }
 
     function connect() {
+      reconnectAttempt += 1;
+
       setStatus((previous) =>
         previous === "connected" || previous === "ready" || previous === "voice"
           ? "reconnecting"
           : "connecting",
       );
-      setError(null);
+
+      console.info(`Discord Gateway Verbindung #${reconnectAttempt} wird geöffnet…`);
 
       websocket = new WebSocket(config.discord.gatewayUrl);
 
       websocket.addEventListener("open", () => {
+        console.info("Discord Gateway geöffnet");
         setStatus("connected");
       });
 
@@ -125,9 +181,14 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
 
         if (payload.op === DISCORD_GATEWAY_OP.HELLO) {
           const hello = payload.d as DiscordGatewayHello;
+          console.info("Discord Gateway HELLO:", {
+            heartbeatInterval: hello.heartbeat_interval,
+          });
 
           heartbeatTimer = window.setInterval(() => {
-            websocket?.send(
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) return;
+
+            websocket.send(
               JSON.stringify({
                 op: DISCORD_GATEWAY_OP.HEARTBEAT,
                 d: sequence,
@@ -140,11 +201,13 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
         }
 
         if (payload.op === DISCORD_GATEWAY_OP.RECONNECT) {
+          console.warn("Discord Gateway fordert Reconnect an.");
           reconnect();
           return;
         }
 
         if (payload.op === DISCORD_GATEWAY_OP.INVALID_SESSION) {
+          console.warn("Discord Gateway INVALID_SESSION:", payload.d);
           reconnect();
           return;
         }
@@ -154,18 +217,25 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
         handleDispatch(payload);
       });
 
-      websocket.addEventListener("error", () => {
-        setStatus("error");
-        setError("Discord Gateway Fehler");
+      websocket.addEventListener("error", (event) => {
+        console.error("Discord Gateway WebSocket Fehler:", event);
+        setError("Discord Gateway WebSocket Fehler. Close-Code prüfen.");
       });
 
-      websocket.addEventListener("close", () => {
+      websocket.addEventListener("close", (event) => {
         if (heartbeatTimer !== null) {
           window.clearInterval(heartbeatTimer);
           heartbeatTimer = null;
         }
 
+        const message = `Discord Gateway geschlossen: Code ${event.code}${
+          event.reason ? ` · ${event.reason}` : ""
+        } · ${explainDiscordCloseCode(event.code)}`;
+
+        console.warn(message, event);
+
         if (!closedByEffect) {
+          setError(message);
           setStatus("reconnecting");
           reconnectTimer = window.setTimeout(connect, config.discord.reconnectSeconds * 1000);
         }
@@ -175,27 +245,36 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
     function identify(socket: WebSocket | null) {
       if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
-      socket.send(
-        JSON.stringify({
-          op: DISCORD_GATEWAY_OP.IDENTIFY,
-          d: {
-            token: botToken,
-            intents: DISCORD_INTENTS.GUILDS | DISCORD_INTENTS.GUILD_VOICE_STATES,
-            properties: {
-              os: "windows",
-              browser: "gc8-companion",
-              device: "gc8-companion",
-            },
+      const identifyPayload = {
+        op: DISCORD_GATEWAY_OP.IDENTIFY,
+        d: {
+          token: botToken,
+          intents: DISCORD_INTENTS.GUILDS | DISCORD_INTENTS.GUILD_VOICE_STATES,
+          properties: {
+            os: "windows",
+            browser: "gc8-companion",
+            device: "gc8-companion",
           },
-        }),
-      );
+        },
+      };
+
+      console.info("Discord Gateway IDENTIFY wird gesendet:", {
+        intents: identifyPayload.d.intents,
+      });
+
+      socket.send(JSON.stringify(identifyPayload));
     }
 
     function handleDispatch(payload: DiscordGatewayPayload) {
       if (payload.t === "READY") {
         const ready = payload.d as DiscordReadyEvent;
-        console.info("Discord Bot verbunden:", ready.user.username);
+        console.info("Discord Gateway READY:", {
+          botId: ready.user.id,
+          username: ready.user.username,
+        });
+
         setStatus("ready");
+        setError(null);
         setLastUpdated(Date.now());
         return;
       }
@@ -203,6 +282,13 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
       if (payload.t === "GUILD_CREATE") {
         const guild = payload.d as DiscordGuildCreateEvent;
         if (guild.id !== config.discord.guildId) return;
+
+        console.info("Discord GUILD_CREATE:", {
+          id: guild.id,
+          name: guild.name,
+          channels: guild.channels?.length ?? 0,
+          voiceStates: guild.voice_states?.length ?? 0,
+        });
 
         setGuildName(guild.name);
 
@@ -235,6 +321,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
         }
 
         setStatus("ready");
+        setError(null);
         return;
       }
 
@@ -242,6 +329,12 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
         const voiceState = payload.d as DiscordVoiceState;
 
         if (voiceState.guild_id !== config.discord.guildId) return;
+
+        console.info("Discord VOICE_STATE_UPDATE:", {
+          userId: voiceState.user_id,
+          channelId: voiceState.channel_id,
+          isConfiguredUser: voiceState.user_id === config.discord.userId,
+        });
 
         if (voiceState.member) {
           setMembersByUser((current) => ({
@@ -262,6 +355,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
           return next;
         });
 
+        setError(null);
         setLastUpdated(Date.now());
       }
 
@@ -288,7 +382,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
       reconnectTimer = window.setTimeout(connect, config.discord.reconnectSeconds * 1000);
     }
 
-    connect();
+    validateAndConnect();
 
     return () => {
       closedByEffect = true;
@@ -354,7 +448,10 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
     ? "disabled"
     : !botToken
       ? "missing-token"
-      : status === "error" || status === "connecting" || status === "reconnecting"
+      : status === "error" ||
+          status === "checking" ||
+          status === "connecting" ||
+          status === "reconnecting"
         ? status
         : myChannelId
           ? "voice"
@@ -396,6 +493,7 @@ function toVoiceMember(
   return {
     userId: voiceState.user_id,
     name,
+    avatarUrl: user?.avatar ? getDiscordAvatarUrl(user.id, user.avatar) : null,
     isSelf: voiceState.user_id === config.discord.userId,
     muted: Boolean(voiceState.self_mute || voiceState.mute),
     deafened: Boolean(voiceState.self_deaf || voiceState.deaf),
@@ -403,6 +501,21 @@ function toVoiceMember(
     video: Boolean(voiceState.self_video),
     suppress: Boolean(voiceState.suppress),
   };
+}
+
+async function fetchDiscordBotSelf(token: string): Promise<DiscordBotSelf> {
+  const url = `${config.discord.restBaseUrl}/users/@me`;
+  const text = await invoke<string>("fetch_discord_text", { url, token });
+  return JSON.parse(text) as DiscordBotSelf;
+}
+
+async function fetchDiscordGuild(
+  guildId: string,
+  token: string,
+): Promise<DiscordGuildInfo> {
+  const url = `${config.discord.restBaseUrl}/guilds/${guildId}`;
+  const text = await invoke<string>("fetch_discord_text", { url, token });
+  return JSON.parse(text) as DiscordGuildInfo;
 }
 
 async function fetchDiscordMember(
@@ -415,6 +528,41 @@ async function fetchDiscordMember(
   return JSON.parse(text) as DiscordGuildMember;
 }
 
+function getDiscordAvatarUrl(userId: string, avatarHash: string) {
+  const extension = avatarHash.startsWith("a_") ? "gif" : "webp";
+  return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=96`;
+}
+
 function shortUserId(userId: string) {
   return `User ${userId.slice(-4)}`;
+}
+
+function formatError(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Unbekannter Fehler";
+}
+
+function explainDiscordCloseCode(code: number) {
+  const explanations: Record<number, string> = {
+    1000: "Normal geschlossen",
+    1001: "Endpoint geht weg",
+    1006: "Abnormal geschlossen / Netzwerk / Discord hat ohne Close-Frame getrennt",
+    4000: "Unbekannter Discord Gateway Fehler",
+    4001: "Unbekannter Opcode",
+    4002: "Ungültiger Payload",
+    4003: "Nicht authentifiziert",
+    4004: "Authentifizierung fehlgeschlagen, Bot-Token prüfen",
+    4005: "Bereits authentifiziert",
+    4007: "Ungültige Sequence",
+    4008: "Rate Limit",
+    4009: "Session Timeout",
+    4010: "Ungültiger Shard",
+    4011: "Sharding erforderlich",
+    4012: "Ungültige API-Version",
+    4013: "Ungültige Intents",
+    4014: "Nicht erlaubte Intents",
+  };
+
+  return explanations[code] ?? "Unbekannter Close-Code";
 }
