@@ -1,4 +1,4 @@
-﻿const isProduction = import.meta.env.PROD;
+const isProduction = import.meta.env.PROD;
 
 export const config = {
   homeAssistant: {
@@ -29,7 +29,21 @@ export const config = {
   },
 
   calendar: {
-    enabled: true,
+    enabled: false,
+    title: "Nächste Termine",
     maxEvents: 4,
+    refreshMinutes: 10,
+    lookAheadDays: 60,
+  },
+
+  discord: {
+    enabled: true,
+    title: "Discord Voice",
+    guildId: "1077872923395764265",
+    userId: "270115300047847434",
+    gatewayUrl: "wss://gateway.discord.gg/?v=10&encoding=json",
+    restBaseUrl: "https://discord.com/api/v10",
+    maxVisibleMembers: 8,
+    reconnectSeconds: 8,
   },
 } as const;
