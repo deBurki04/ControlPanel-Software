@@ -1,0 +1,10 @@
+.app-root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(29, 185, 84, 0.18), transparent 32%),
+    radial-gradient(circle at 78% 10%, rgba(255, 135, 46, 0.16), transparent 30%),
+    linear-gradient(145deg, #07080a 0%, #111217 45%, #08090b 100%);
+  color: var(--text);
+}
