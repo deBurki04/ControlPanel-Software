@@ -9,8 +9,24 @@ export const config = {
   },
 
   display: {
-    fullscreen: false,
+    /**
+     * false = Entwicklungsmodus:
+     * - normales Fenster
+     * - verschiebbar
+     * - Titelleiste sichtbar
+     *
+     * true = GC8/Kiosk-Modus:
+     * - Vollbild
+     * - optional immer im Vordergrund
+     * - optional ohne Fensterrahmen
+     */
+    kiosk: false,
+
     alwaysOnTop: false,
+
+    hideDecorationsInKiosk: true,
+
+    enableHotkeys: true,
   },
 
   calendar: {

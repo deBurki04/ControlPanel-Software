@@ -1,9 +1,8 @@
 import { useEffect } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { config } from "./config/config";
 import { haClient } from "./services/homeassistant/Client";
 import { useHomeAssistantStore } from "./store/homeassistant";
+import { useDisplayMode } from "./hooks/useDisplayMode";
 
 import { DashboardShell } from "./components/Layout/DashboardShell";
 import { SpotifyWidget } from "./components/Spotify/SpotifyWidget";
@@ -18,15 +17,9 @@ export default function App() {
   const status = useHomeAssistantStore((state) => state.status);
   const error = useHomeAssistantStore((state) => state.error);
 
+  useDisplayMode();
+
   useEffect(() => {
-    if (config.display.fullscreen) {
-      getCurrentWindow().setFullscreen(true).catch(console.warn);
-    }
-
-    if (config.display.alwaysOnTop) {
-      getCurrentWindow().setAlwaysOnTop(true).catch(console.warn);
-    }
-
     haClient.connect();
 
     return () => {
