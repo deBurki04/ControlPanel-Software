@@ -1,37 +1,38 @@
 .temperature-widget {
   height: 100%;
+  padding: 30px 34px;
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 24px;
 }
 
 .temperature-widget__icon {
-  width: 72px;
-  height: 72px;
+  width: 82px;
+  height: 82px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 22px;
+  border-radius: 25px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--accent);
 }
 
 .temperature-widget__value {
-  font-size: clamp(54px, 5vw, 92px);
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 0.95;
+  font-size: clamp(64px, 5.2vw, 104px);
+  font-weight: 900;
+  letter-spacing: -0.07em;
+  line-height: 0.92;
 }
 
 .temperature-widget__value span {
-  margin-left: 8px;
-  font-size: 0.42em;
+  margin-left: 10px;
+  font-size: 0.40em;
   color: var(--muted);
   letter-spacing: -0.02em;
 }
 
 .temperature-widget__label {
-  margin-top: 8px;
-  font-size: 25px;
+  margin-top: 10px;
+  font-size: 28px;
   color: var(--muted);
 }

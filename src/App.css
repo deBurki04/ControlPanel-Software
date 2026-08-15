@@ -3,8 +3,9 @@
   height: 100vh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 12% 14%, rgba(29, 185, 84, 0.18), transparent 32%),
-    radial-gradient(circle at 78% 10%, rgba(255, 135, 46, 0.16), transparent 30%),
-    linear-gradient(145deg, #07080a 0%, #111217 45%, #08090b 100%);
+    radial-gradient(circle at 12% 14%, rgba(29, 185, 84, 0.20), transparent 34%),
+    radial-gradient(circle at 78% 10%, rgba(255, 135, 46, 0.18), transparent 31%),
+    radial-gradient(circle at 56% 96%, rgba(88, 101, 242, 0.12), transparent 34%),
+    linear-gradient(145deg, #06070a 0%, #101117 46%, #07080b 100%);
   color: var(--text);
 }

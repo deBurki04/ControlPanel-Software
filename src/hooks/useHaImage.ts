@@ -7,7 +7,6 @@ const cache = new Map<string, string>();
 
 export function useHaImage(pathOrUrl: string | null | undefined) {
   const [src, setSrc] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -16,14 +15,12 @@ export function useHaImage(pathOrUrl: string | null | undefined) {
 
     if (!url) {
       setSrc(null);
-      setError(null);
       return;
     }
 
     const cached = cache.get(url);
     if (cached) {
       setSrc(cached);
-      setError(null);
       return;
     }
 
@@ -35,13 +32,11 @@ export function useHaImage(pathOrUrl: string | null | undefined) {
         if (cancelled) return;
         cache.set(url, dataUrl);
         setSrc(dataUrl);
-        setError(null);
       })
       .catch((err) => {
         if (cancelled) return;
         console.warn("Albumcover konnte nicht geladen werden:", err);
         setSrc(null);
-        setError(String(err));
       });
 
     return () => {
@@ -49,5 +44,5 @@ export function useHaImage(pathOrUrl: string | null | undefined) {
     };
   }, [pathOrUrl]);
 
-  return { src, error };
+  return { src };
 }
