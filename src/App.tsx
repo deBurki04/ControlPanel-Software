@@ -10,6 +10,7 @@ import { ClockWidget } from "./components/Clock/ClockWidget";
 import { TemperatureWidget } from "./components/Temperature/TemperatureWidget";
 import { DiscordWidget } from "./components/Discord/DiscordWidget";
 import { ConnectionBadge } from "./components/Common/ConnectionBadge";
+import { useCursorRestore } from "./hooks/useCursorRestore";
 
 import "./App.css";
 
@@ -18,6 +19,7 @@ export default function App() {
   const error = useHomeAssistantStore((state) => state.error);
 
   useDisplayMode();
+  useCursorRestore();
 
   useEffect(() => {
     haClient.connect();

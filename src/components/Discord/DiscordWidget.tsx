@@ -1,11 +1,14 @@
+﻿import { useMemo, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
+  Bell,
   Headphones,
   Mic,
   MicOff,
   Radio,
   RefreshCcw,
   Search,
+  Smartphone,
   Users,
   Video,
   VolumeX,
@@ -17,6 +20,10 @@ import {
   type DiscordVoiceMember,
   useDiscordVoiceStatus,
 } from "../../hooks/useDiscordVoiceStatus";
+import {
+  getDismissedPhoneNotification,
+  usePhoneNotification,
+} from "../../hooks/usePhoneNotification";
 import "./DiscordWidget.css";
 
 export function DiscordWidget() {
@@ -31,15 +38,33 @@ export function DiscordWidget() {
     lastUpdated,
   } = useDiscordVoiceStatus();
 
+  const phoneNotification = usePhoneNotification();
+
+  const [dismissedNotificationId, setDismissedNotificationId] = useState<string | null>(
+    null,
+  );
+
+  const visiblePhoneNotification = useMemo(() => {
+    if (
+      phoneNotification.isAvailable &&
+      phoneNotification.id === dismissedNotificationId
+    ) {
+      return getDismissedPhoneNotification();
+    }
+
+    return phoneNotification;
+  }, [dismissedNotificationId, phoneNotification]);
+
   const visibleMembers = members.slice(0, config.discord.maxVisibleMembers);
   const hiddenCount = Math.max(0, totalMembers - visibleMembers.length);
+  const isInVoice = status === "voice";
 
   return (
     <div className="discord-widget">
       <header className="discord-widget__header">
         <div>
-          <span>Voice Overlay</span>
-          <h2>{config.discord.title}</h2>
+          <span>{isInVoice ? "Voice Overlay" : "Standby"}</span>
+          <h2>{isInVoice ? config.discord.title : "Handy"}</h2>
           <p>{getStatusText(status, error, guildName, lastUpdated)}</p>
         </div>
 
@@ -57,27 +82,37 @@ export function DiscordWidget() {
         <div className="discord-widget__channelText">
           <span>Aktueller Channel</span>
           <h3>{channelName ?? "Nicht in Voice"}</h3>
-          <small>{totalMembers > 0 ? `${totalMembers} verbunden` : "Warte auf Voice"}</small>
+          <small>{totalMembers > 0 ? `${totalMembers} verbunden` : "Voice Standby"}</small>
         </div>
       </section>
 
-      {me ? <SelfStatus member={me} /> : <EmptySelfStatus />}
+      {me ? <SelfStatus member={me} /> : <PhoneStatus />}
 
       <section className="discord-widget__members">
-        {visibleMembers.length === 0 ? (
-          <div className="discord-widget__empty">
-            <Radio size={24} />
-            <span>Du bist gerade in keinem Voice-Channel.</span>
-          </div>
-        ) : (
-          visibleMembers.map((member) => (
-            <MemberPill member={member} key={member.userId} />
-          ))
-        )}
+        {isInVoice && visibleMembers.length > 0 ? (
+          <>
+            {visibleMembers.map((member) => (
+              <MemberPill member={member} key={member.userId} />
+            ))}
 
-        {hiddenCount > 0 ? (
-          <div className="discord-widget__more">+{hiddenCount}</div>
-        ) : null}
+            {hiddenCount > 0 ? (
+              <div className="discord-widget__more">+{hiddenCount}</div>
+            ) : null}
+          </>
+        ) : (
+          <PhoneNotificationCard
+            app={visiblePhoneNotification.app}
+            title={visiblePhoneNotification.title}
+            text={visiblePhoneNotification.text}
+            timeLabel={visiblePhoneNotification.timeLabel}
+            isAvailable={visiblePhoneNotification.isAvailable}
+            onDismiss={() => {
+              if (phoneNotification.isAvailable) {
+                setDismissedNotificationId(phoneNotification.id);
+              }
+            }}
+          />
+        )}
       </section>
     </div>
   );
@@ -118,15 +153,76 @@ function SelfStatus({ member }: { member: DiscordVoiceMember }) {
   );
 }
 
-function EmptySelfStatus() {
+function PhoneStatus() {
   return (
-    <section className="discord-widget__self discord-widget__self--empty">
-      <div className="discord-widget__pulse" />
+    <section className="discord-widget__self discord-widget__self--phone">
+      <div className="discord-widget__phoneIcon">
+        <Smartphone size={26} />
+      </div>
+
       <div className="discord-widget__selfText">
-        <strong>Standby</strong>
-        <span>Voice-Status erscheint hier</span>
+        <strong>S25 Remote</strong>
+        <span>Benachrichtigungen aktiv</span>
+      </div>
+
+      <div className="discord-widget__badges">
+        <StatusBadge active label="Android">
+          <Smartphone size={16} />
+        </StatusBadge>
+
+        <StatusBadge active label="HA Sensor">
+          <Bell size={16} />
+        </StatusBadge>
       </div>
     </section>
+  );
+}
+
+function PhoneNotificationCard({
+  app,
+  title,
+  text,
+  timeLabel,
+  isAvailable,
+  onDismiss,
+}: {
+  app: string;
+  title: string;
+  text: string;
+  timeLabel: string;
+  isAvailable: boolean;
+  onDismiss: () => void;
+}) {
+  return (
+    <article
+      className={`discord-widget__notification ${
+        isAvailable ? "is-clickable" : "is-empty"
+      }`}
+      role={isAvailable ? "button" : undefined}
+      tabIndex={isAvailable ? 0 : undefined}
+      title={isAvailable ? "Klicken zum Ausblenden" : undefined}
+      onClick={isAvailable ? onDismiss : undefined}
+      onKeyDown={(event) => {
+        if (!isAvailable) return;
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onDismiss();
+        }
+      }}
+    >
+      <div className="discord-widget__notificationIcon">
+        <Bell size={24} />
+      </div>
+
+      <div className="discord-widget__notificationText">
+        <span>{isAvailable ? app : "Android"}</span>
+        <strong>{title}</strong>
+        <p>{text}</p>
+      </div>
+
+      {timeLabel ? <time>{timeLabel}</time> : null}
+    </article>
   );
 }
 
@@ -172,7 +268,7 @@ function StatusBadge({
 }: {
   active: boolean;
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className={`discord-widget__badge ${active ? "is-active" : "is-muted"}`}>
@@ -195,6 +291,10 @@ function getStatusText(
   if (status === "reconnecting") return error ?? "Discord verbindet neu…";
   if (status === "error") return error ?? "Discord Fehler";
 
+  if (status === "not-in-voice") {
+    return "Discord Standby · letzte Handy-Benachrichtigung";
+  }
+
   if (lastUpdated) {
     return (
       <>
@@ -209,6 +309,7 @@ function getStatusText(
 
 function getStateIcon(status: DiscordConnectionStatus) {
   if (status === "voice") return <Users size={20} />;
+  if (status === "not-in-voice") return <Smartphone size={20} />;
   if (status === "checking") return <Search size={20} />;
   if (status === "error" || status === "missing-token") return <AlertTriangle size={20} />;
   return <Radio size={20} />;
@@ -216,7 +317,7 @@ function getStateIcon(status: DiscordConnectionStatus) {
 
 function getStateLabel(status: DiscordConnectionStatus) {
   if (status === "voice") return "Im Voice";
-  if (status === "not-in-voice") return "Standby";
+  if (status === "not-in-voice") return "Handy";
   if (status === "checking") return "Prüfe";
   if (status === "connecting") return "Verbinde";
   if (status === "reconnecting") return "Reconnect";

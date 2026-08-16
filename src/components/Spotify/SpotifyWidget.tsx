@@ -1,16 +1,31 @@
-﻿import { Music, Pause, Play, Radio } from "lucide-react";
+﻿import { useState } from "react";
+import {
+  Music,
+  Pause,
+  Play,
+  Radio,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { config } from "../../config/config";
 import { useNow } from "../../hooks/useNow";
 import { useHaImage } from "../../hooks/useHaImage";
 import { useHAEntity } from "../../store/homeassistant";
+import { callHomeAssistantService } from "../../services/homeassistant/callService";
 import { formatSeconds, getSpotifyDisplayState } from "../../utils/spotify";
 import "./SpotifyWidget.css";
+
+type SpotifyAction =
+  | "media_previous_track"
+  | "media_play_pause"
+  | "media_next_track";
 
 export function SpotifyWidget() {
   const entity = useHAEntity(config.entities.spotify);
   const now = useNow(1000);
   const spotify = getSpotifyDisplayState(entity, now);
   const { src } = useHaImage(spotify.entityPicture);
+  const [pendingAction, setPendingAction] = useState<SpotifyAction | null>(null);
 
   const statusIcon =
     spotify.status === "playing" ? (
@@ -20,6 +35,26 @@ export function SpotifyWidget() {
     ) : (
       <Radio size={18} />
     );
+
+  async function handleControl(service: SpotifyAction) {
+    if (pendingAction) return;
+
+    try {
+      setPendingAction(service);
+
+      await callHomeAssistantService("media_player", service, {
+        entity_id: config.entities.spotify,
+      });
+    } catch (error) {
+      console.warn("Spotify Steuerung fehlgeschlagen:", error);
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  const controlsDisabled =
+    Boolean(pendingAction) ||
+    spotify.status === "unknown";
 
   return (
     <div className="spotify-widget">
@@ -54,6 +89,36 @@ export function SpotifyWidget() {
             <span>{formatSeconds(spotify.duration)}</span>
           </div>
         </div>
+
+        <div className="spotify-widget__controls">
+          <button
+            type="button"
+            aria-label="Vorheriger Titel"
+            disabled={controlsDisabled}
+            onClick={() => handleControl("media_previous_track")}
+          >
+            <SkipBack size={28} />
+          </button>
+
+          <button
+            type="button"
+            className="spotify-widget__controlMain"
+            aria-label={spotify.status === "playing" ? "Pause" : "Wiedergabe"}
+            disabled={controlsDisabled}
+            onClick={() => handleControl("media_play_pause")}
+          >
+            {spotify.status === "playing" ? <Pause size={34} /> : <Play size={34} />}
+          </button>
+
+          <button
+            type="button"
+            aria-label="Nächster Titel"
+            disabled={controlsDisabled}
+            onClick={() => handleControl("media_next_track")}
+          >
+            <SkipForward size={28} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -66,3 +131,4 @@ function statusLabel(status: string) {
   if (status === "off") return "Spotify aus";
   return "Warte auf Spotify";
 }
+

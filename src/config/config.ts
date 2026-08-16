@@ -9,6 +9,7 @@ export const config = {
     spotify: "media_player.spotify_joel_burki",
     temperature: "sensor.thermostat_gamezimmer_temperature",
     outdoorTemperature: "sensor.hue_outdoor_motion_sensor_1_temperature",
+    phoneNotification: "sensor.s25_remote_last_notification",
   },
 
   display: {
