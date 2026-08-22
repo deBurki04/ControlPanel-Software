@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { config } from "../config/config";
-import { localConfig } from "../config/config.local";
+import { getDiscordBotToken } from "../config/runtimeSettings";
 import type {
   DiscordChannel,
   DiscordGatewayHello,
@@ -26,12 +26,6 @@ const DISCORD_INTENTS = {
   GUILDS: 1 << 0,
   GUILD_VOICE_STATES: 1 << 7,
 } as const;
-
-type LocalConfigWithDiscord = typeof localConfig & {
-  discord?: {
-    botToken?: string;
-  };
-};
 
 interface DiscordBotSelf {
   id: string;
@@ -92,9 +86,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
 
   const requestedMemberIdsRef = useRef<Set<string>>(new Set());
 
-  const botToken = useMemo(() => {
-    return ((localConfig as LocalConfigWithDiscord).discord?.botToken ?? "").trim();
-  }, []);
+  const botToken = useMemo(() => getDiscordBotToken(), []);
 
   useEffect(() => {
     if (!config.discord.enabled) {
@@ -104,7 +96,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
 
     if (!botToken) {
       setStatus("missing-token");
-      setError("Discord Bot Token fehlt in config.local.ts");
+      setError("Discord Bot Token fehlt in den Einstellungen");
       return;
     }
 
@@ -148,7 +140,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
 
         setStatus("error");
         setError(
-          `Discord REST Check fehlgeschlagen: ${message}. Token prüfen oder Bot in Server einladen.`,
+          `Discord REST Check fehlgeschlagen: ${message}. Token prÃ¼fen oder Bot in Server einladen.`,
         );
       }
     }
@@ -162,12 +154,12 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
           : "connecting",
       );
 
-      console.info(`Discord Gateway Verbindung #${reconnectAttempt} wird geöffnet…`);
+      console.info(`Discord Gateway Verbindung #${reconnectAttempt} wird geÃ¶ffnetâ€¦`);
 
       websocket = new WebSocket(config.discord.gatewayUrl);
 
       websocket.addEventListener("open", () => {
-        console.info("Discord Gateway geöffnet");
+        console.info("Discord Gateway geÃ¶ffnet");
         setStatus("connected");
       });
 
@@ -219,7 +211,7 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
 
       websocket.addEventListener("error", (event) => {
         console.error("Discord Gateway WebSocket Fehler:", event);
-        setError("Discord Gateway WebSocket Fehler. Close-Code prüfen.");
+        setError("Discord Gateway WebSocket Fehler. Close-Code prÃ¼fen.");
       });
 
       websocket.addEventListener("close", (event) => {
@@ -229,8 +221,8 @@ export function useDiscordVoiceStatus(): DiscordVoiceStatus {
         }
 
         const message = `Discord Gateway geschlossen: Code ${event.code}${
-          event.reason ? ` · ${event.reason}` : ""
-        } · ${explainDiscordCloseCode(event.code)}`;
+          event.reason ? ` Â· ${event.reason}` : ""
+        } Â· ${explainDiscordCloseCode(event.code)}`;
 
         console.warn(message, event);
 
@@ -550,19 +542,21 @@ function explainDiscordCloseCode(code: number) {
     1006: "Abnormal geschlossen / Netzwerk / Discord hat ohne Close-Frame getrennt",
     4000: "Unbekannter Discord Gateway Fehler",
     4001: "Unbekannter Opcode",
-    4002: "Ungültiger Payload",
+    4002: "UngÃ¼ltiger Payload",
     4003: "Nicht authentifiziert",
-    4004: "Authentifizierung fehlgeschlagen, Bot-Token prüfen",
+    4004: "Authentifizierung fehlgeschlagen, Bot-Token prÃ¼fen",
     4005: "Bereits authentifiziert",
-    4007: "Ungültige Sequence",
+    4007: "UngÃ¼ltige Sequence",
     4008: "Rate Limit",
     4009: "Session Timeout",
-    4010: "Ungültiger Shard",
+    4010: "UngÃ¼ltiger Shard",
     4011: "Sharding erforderlich",
-    4012: "Ungültige API-Version",
-    4013: "Ungültige Intents",
+    4012: "UngÃ¼ltige API-Version",
+    4013: "UngÃ¼ltige Intents",
     4014: "Nicht erlaubte Intents",
   };
 
   return explanations[code] ?? "Unbekannter Close-Code";
 }
+
+

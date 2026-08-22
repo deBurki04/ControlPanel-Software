@@ -1,5 +1,10 @@
 ﻿use base64::{engine::general_purpose, Engine as _};
 use std::sync::{Mutex, OnceLock};
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
 use windows_sys::Win32::Foundation::POINT;
 use windows_sys::Win32::UI::WindowsAndMessaging::{GetCursorPos, SetCursorPos};
 
@@ -85,7 +90,7 @@ fn fetch_text_url(url: String) -> Result<String, String> {
 
     let response = client
         .get(&url)
-        .header(reqwest::header::USER_AGENT, "GC8 Companion/0.11")
+        .header(reqwest::header::USER_AGENT, "GC8 Companion/0.12")
         .send()
         .map_err(|error| format!("URL konnte nicht geladen werden: {error}"))?;
 
@@ -106,7 +111,7 @@ fn fetch_discord_text(url: String, token: String) -> Result<String, String> {
 
     let response = client
         .get(&url)
-        .header(reqwest::header::USER_AGENT, "GC8 Companion Discord/0.11")
+        .header(reqwest::header::USER_AGENT, "GC8 Companion Discord/0.12")
         .header(reqwest::header::AUTHORIZATION, format!("Bot {token}"))
         .send()
         .map_err(|error| format!("Discord konnte nicht geladen werden: {error}"))?;
@@ -152,9 +157,65 @@ fn call_home_assistant_service(
     Ok(())
 }
 
+fn show_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+fn hide_main_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.hide();
+    }
+}
+
+fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
+    let show_item = MenuItem::with_id(app, "show", "Anzeigen", true, None::<&str>)?;
+    let hide_item = MenuItem::with_id(app, "hide", "Ausblenden", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Beenden", true, None::<&str>)?;
+
+    let menu = Menu::with_items(app, &[&show_item, &hide_item, &quit_item])?;
+
+    TrayIconBuilder::new()
+        .icon(app.default_window_icon().unwrap().clone())
+        .tooltip("GC8 Companion")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => show_main_window(app),
+            "hide" => hide_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            setup_tray(app)?;
+
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_skip_taskbar(true);
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             remember_cursor_position,
             restore_cursor_position,

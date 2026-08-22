@@ -12,6 +12,12 @@ const interactiveSelector = [
   ".discord-widget__notification",
 ].join(",");
 
+const ignoreSelector = [
+  ".settings-button",
+  ".settings-modal",
+  "[data-no-cursor-restore]",
+].join(",");
+
 export function useCursorRestore() {
   useEffect(() => {
     let isInteracting = false;
@@ -35,8 +41,15 @@ export function useCursorRestore() {
       }
     }
 
+    function shouldIgnoreTarget(target: EventTarget | null) {
+      if (!(target instanceof Element)) return false;
+      return Boolean(target.closest(ignoreSelector));
+    }
+
     function isInteractiveTarget(target: EventTarget | null) {
       if (!(target instanceof Element)) return false;
+      if (shouldIgnoreTarget(target)) return false;
+
       return Boolean(target.closest(interactiveSelector));
     }
 
@@ -60,10 +73,6 @@ export function useCursorRestore() {
 
       clearRestoreTimers();
 
-      /**
-       * Mehrfach zurücksetzen, weil Windows/Touch den Mauszeiger manchmal
-       * nach dem Loslassen nochmals auf die Touch-Position setzt.
-       */
       for (const delay of [120, 260, 520, 900, 1400]) {
         timers.push(
           window.setTimeout(() => {

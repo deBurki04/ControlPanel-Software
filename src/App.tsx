@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 
 import { haClient } from "./services/homeassistant/Client";
 import { useHomeAssistantStore } from "./store/homeassistant";
@@ -10,6 +10,7 @@ import { ClockWidget } from "./components/Clock/ClockWidget";
 import { TemperatureWidget } from "./components/Temperature/TemperatureWidget";
 import { DiscordWidget } from "./components/Discord/DiscordWidget";
 import { ConnectionBadge } from "./components/Common/ConnectionBadge";
+import { SettingsButton } from "./components/Settings/SettingsButton";
 import { useCursorRestore } from "./hooks/useCursorRestore";
 
 import "./App.css";
@@ -35,6 +36,9 @@ export default function App() {
         temperature={<TemperatureWidget />}
         calendar={<DiscordWidget />}
       />
+          <SettingsButton />
     </main>
   );
 }
+
+
